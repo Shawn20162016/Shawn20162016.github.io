@@ -62,8 +62,6 @@
 			
 				<li><a href="/">主页</a></li>
 	        
-				<li><a href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a></li>
-	        
 			</ul>
 		</nav>
 		<nav class="header-smart-menu">
@@ -108,8 +106,6 @@
 			
 				
 			
-				
-			
 			
 			
 			<nav class="header-nav">
@@ -122,9 +118,7 @@
 				<ul style="width: 50%">
 				
 				
-					<li style="width: 50%"><a href="/">主页</a></li>
-		        
-					<li style="width: 50%"><a href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a></li>
+					<li style="width: 100%"><a href="/">主页</a></li>
 		        
 				</ul>
 			</nav>
@@ -154,7 +148,7 @@
 
         
         <a href="/2020/05/11/sock_state_machine/" class="archive-article-date">
-  	<time datetime="2020-05-11T15:36:40.455Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-11</time>
+  	<time datetime="2020-05-11T20:19:10.214Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-11</time>
 </a>
         
       </header>
@@ -178,7 +172,7 @@
 <h1 id="异步解决方案："><a href="#异步解决方案：" class="headerlink" title="异步解决方案："></a>异步解决方案：</h1><p>异步解决方案本质上是基于事件的驱动。为了详细解释这个机制，本文将先用时序图描述具体问题，然后用状态机来进行功能设计，最后给出伪代码。</p>
 <h2 id="时序图："><a href="#时序图：" class="headerlink" title="时序图："></a>时序图：</h2><p>需要先用时序图来描述<strong>FTP</strong>第一步的通讯过程，这是下面两步的基础。<br>    <img src="https://user-gold-cdn.xitu.io/2020/5/3/171d85f694c21a26?w=640&h=608&f=png&s=31946" alt="FTP控制信道的建立"></p>
 <h2 id="状态机："><a href="#状态机：" class="headerlink" title="状态机："></a>状态机：</h2><p>从时序图可以看出，FTP的客户端和服务器有多次交互。异步通讯，就是一个指令发送完成后，在收到回应之前，可以让这个进程能去作别的工作。等收到回应后，再从发送完成的那个代码点继续运行。要实现这个机制，我们可以用状态来记住那些代码点，这样自然就可以想到用有限状态机来进行设计。如何定义FTP的状态机呢？<strong>严格的说，每一次系统调用如果需要根据返回的结果才能决定下一步的动作的话，就需要定义一个状态</strong>。根据时序图建立的FTP客户端状态机如下三个图所示：</p>
-<p>  <img src="https://user-gold-cdn.xitu.io/2020/5/3/171db38a1490e51d?w=640&h=667&f=png&s=33830" alt="FTP控制信道状态机1" title="FTP控制信道状态机1"><br>  <img src="https://user-gold-cdn.xitu.io/2020/5/4/171db498faf6611b?w=640&h=667&f=png&s=34508" alt="FTP控制信道状态机2" title="FTP控制信道状态机2"><br>  <img src="https://user-gold-cdn.xitu.io/2020/5/4/171db472f4746027?w=640&h=556&f=png&s=29625" alt="FTP控制信道状态机3" title="FTP控制信道状态机3"></p>
+<p>  <img src="https://raw.githubusercontent.com/Shawn20162016/marketdown/master/stateMachine1.png" alt="FTP控制信道状态机1" title="FTP控制信道状态机1"><br>  <img src="https://raw.githubusercontent.com/Shawn20162016/marketdown/master/stateMachine2.png" alt="FTP控制信道状态机2" title="FTP控制信道状态机2"><br>  <img src="https://raw.githubusercontent.com/Shawn20162016/marketdown/master/stateMachine3.png" alt="FTP控制信道状态机3" title="FTP控制信道状态机3"></p>
 <p>  从状态机图可以看出，为了支持三次握手，FTP控制信道状态机1定义了Connect, Connecting, Connected三种状态，其中Connect是socket系统调用connect()之前，Connecting是connect()之后的状态。Connected是socket信道可用时的状态。这三个状态一般是顺序变化的，如果有了错误或者超时，都会回到结束状态，以便重新开始。接下来的每个状态又分为三种情况，分别是成功，进入下状态；失败或者超时,进入结束状态；还没有发送或接收完毕，保持本状态不变。这里需要指出的是，虽然保持本状态不变，进程还是可以去作其他任务，当底层socket准备好可以继续发送或者接收时，状态机会从当前状态继续运行。</p>
 <h2 id="伪代码："><a href="#伪代码：" class="headerlink" title="伪代码："></a>伪代码：</h2><p>   为了说明状态机的实现，下面给出Linux下利用epoll实现的伪代码，在其他平台上，系统调用可能有所变化，但是思想不变。</p>
 <h3 id="1-数据结构"><a href="#1-数据结构" class="headerlink" title="1. 数据结构"></a>1. 数据结构</h3><ul>
