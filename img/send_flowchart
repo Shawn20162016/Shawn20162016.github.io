@@ -1,0 +1,11 @@
+```mermaid
+graph TD
+start((1.start))
+start --> init[2.生成fd, offset = 0, total = 0]
+init --> send[3.无阻塞发送n个字节, total += n]
+send --> check{4.发送完毕了吗, total >= 1024?}
+check--no--> send
+check--yes--> stop((5.stop))
+
+```
+
